@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Meow Sheets - Ultimate Edition</title>
+  <title>Meow Sheets - Pro Edition</title>
 
   <!-- Tipografías -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
 
-  <!-- Librería SheetJS para Exportación a Excel -->
+  <!-- Librerías Externas (SheetJS + Chart.js) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root {
@@ -24,8 +25,6 @@
       --cell-bg: #000000;
       --cell-active: #111111;
       --accent: #00ff66;
-
-      --border-outer: 3px;
       --border-thick: 2px;
       --border-thin: 1px;
     }
@@ -42,292 +41,178 @@
       --accent: #008037;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      height: 100vh;
-      height: 100dvh;
-      overflow: hidden;
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: 'Source Code Pro', monospace;
-    }
-
-    body {
-      padding: 8px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100vh; height: 100dvh; overflow: hidden; background-color: var(--bg); color: var(--text); font-family: 'Source Code Pro', monospace; }
+    body { padding: 8px; display: flex; justify-content: center; align-items: center; }
 
     .app-frame {
-      width: 100%;
-      max-width: 1000px;
-      height: 100%;
-      max-height: calc(100dvh - 16px);
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      background-color: var(--app-bg);
-      border: var(--border-outer) solid var(--border);
-      overflow: hidden;
+      width: 100%; max-width: 1100px; height: 100%; max-height: calc(100dvh - 16px);
+      display: flex; flex-direction: column; background-color: var(--app-bg);
+      border: 3px solid var(--border); overflow: hidden;
     }
 
     header {
-      display: grid;
-      grid-template-columns: 44px 1fr 44px 70px;
-      border-bottom: var(--border-thick) solid var(--border);
-      align-items: stretch;
-      flex-shrink: 0;
+      display: grid; grid-template-columns: 80px 1fr 44px 80px;
+      border-bottom: var(--border-thick) solid var(--border); align-items: stretch; flex-shrink: 0;
     }
 
     .header-btn {
-      background: transparent;
-      color: var(--text);
-      border: none;
-      border-right: var(--border-thick) solid var(--border);
-      padding: 10px 4px;
-      font-size: 11px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: transparent; color: var(--text); border: none;
+      border-right: var(--border-thick) solid var(--border); padding: 10px 4px;
+      font-size: 11px; letter-spacing: 1px; cursor: pointer; text-transform: uppercase;
+      display: flex; align-items: center; justify-content: center;
     }
 
-    .header-btn:hover {
-      background: var(--text);
-      color: var(--app-bg);
-    }
+    .header-btn:hover { background: var(--text); color: var(--app-bg); }
 
     .brand-title {
-      font-family: 'Oswald', sans-serif;
-      font-size: 18px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      text-align: center;
-      padding: 10px 0;
-      font-weight: 700;
-      color: var(--text);
+      font-family: 'Oswald', sans-serif; font-size: 18px; letter-spacing: 2px;
+      text-transform: uppercase; text-align: center; padding: 10px 0; font-weight: 700;
     }
 
-    /* BARRA DE FÓRMULAS */
+    /* BARRA DE FÓRMULAS Y HERRAMIENTAS DE FORMATO */
+    .toolbar {
+      display: flex; flex-wrap: wrap; border-bottom: var(--border-thick) solid var(--border);
+      background: var(--app-bg); gap: 2px; padding: 4px; align-items: center;
+    }
+
+    .tool-select, .tool-input-color {
+      background: var(--app-bg); color: var(--text); border: var(--border-thin) solid var(--border);
+      padding: 4px; font-size: 11px; outline: none; font-family: inherit;
+    }
+
     .formula-bar {
-      display: flex;
-      align-items: center;
-      border-bottom: var(--border-thick) solid var(--border);
+      display: flex; align-items: center; border-bottom: var(--border-thick) solid var(--border);
       background: var(--app-bg);
     }
 
     .cell-address {
-      width: 60px;
-      padding: 8px;
-      font-weight: bold;
-      text-align: center;
-      border-right: var(--border-thin) solid var(--border);
-      color: var(--accent);
-      font-size: 12px;
+      width: 60px; padding: 8px; font-weight: bold; text-align: center;
+      border-right: var(--border-thin) solid var(--border); color: var(--accent); font-size: 12px;
     }
 
     .formula-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: var(--text);
-      padding: 8px 12px;
-      font-family: 'Source Code Pro', monospace;
-      font-size: 12px;
-      outline: none;
+      flex: 1; background: transparent; border: none; color: var(--text);
+      padding: 8px 12px; font-family: 'Source Code Pro', monospace; font-size: 12px; outline: none;
     }
 
-    /* CONTENEDOR DE LA MATRIZ DE CELDAS */
-    .sheet-container {
-      flex: 1;
-      overflow: auto;
-      position: relative;
-    }
+    /* TABLA Y MATRIZ DE CELDAS */
+    .sheet-container { flex: 1; overflow: auto; position: relative; }
 
-    table.grid-table {
-      border-collapse: collapse;
-      width: 100%;
-      table-layout: fixed;
-    }
+    table.grid-table { border-collapse: collapse; width: 100%; table-layout: fixed; }
 
     th, td {
-      border: var(--border-thin) solid var(--grid-line);
-      min-width: 90px;
-      max-width: 150px;
-      height: 28px;
-      font-size: 11px;
-      padding: 2px 6px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      border: var(--border-thin) solid var(--grid-line); min-width: 80px; height: 28px;
+      font-size: 11px; padding: 2px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
     th {
-      background: var(--app-bg);
-      color: var(--subtext);
-      font-weight: bold;
-      text-align: center;
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      border-bottom: var(--border-thick) solid var(--border);
-      user-select: none;
+      background: var(--app-bg); color: var(--subtext); font-weight: bold; text-align: center;
+      position: sticky; top: 0; z-index: 2; border-bottom: var(--border-thick) solid var(--border); user-select: none;
     }
 
     th.row-header {
-      width: 40px;
-      min-width: 40px;
-      position: sticky;
-      left: 0;
-      z-index: 3;
+      width: 40px; min-width: 40px; position: sticky; left: 0; z-index: 3;
       border-right: var(--border-thick) solid var(--border);
     }
 
-    td {
-      background: var(--cell-bg);
-      color: var(--text);
-      outline: none;
-    }
+    td { background: var(--cell-bg); color: var(--text); outline: none; }
+    td.selected { border: 2px solid var(--accent) !important; background: var(--cell-active); }
+    td.wrap-text { white-space: normal; word-break: break-word; }
 
-    td.selected {
-      border: 2px solid var(--accent) !important;
-      background: var(--cell-active);
-    }
+    /* PESTAÑAS Y CONTROLES INFERIORES */
+    .sheet-tabs { display: flex; border-top: var(--border-thick) solid var(--border); background: var(--app-bg); overflow-x: auto; }
+    .tab-btn { background: transparent; color: var(--subtext); border: none; border-right: var(--border-thin) solid var(--border); padding: 8px 16px; font-size: 10px; cursor: pointer; text-transform: uppercase; }
+    .tab-btn.active { color: var(--text); font-weight: bold; border-top: 2px solid var(--accent); background: var(--cell-active); }
 
-    /* BARRA INFERIOR Y PESTAÑAS */
-    .sheet-tabs {
-      display: flex;
-      border-top: var(--border-thick) solid var(--border);
-      background: var(--app-bg);
-      overflow-x: auto;
-    }
+    .bottom-controls { display: flex; border-top: var(--border-thick) solid var(--border); background: var(--app-bg); }
+    .export-btn { margin-left: auto; background: var(--accent); color: #000; font-weight: bold; border: none; padding: 10px 16px; font-family: 'Oswald', sans-serif; cursor: pointer; }
 
-    .tab-btn {
-      background: transparent;
-      color: var(--subtext);
-      border: none;
-      border-right: var(--border-thin) solid var(--border);
-      padding: 8px 16px;
-      font-size: 10px;
-      letter-spacing: 1px;
-      cursor: pointer;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-
-    .tab-btn.active {
-      color: var(--text);
-      font-weight: bold;
-      border-top: 2px solid var(--accent);
-      background: var(--cell-active);
-    }
-
-    .add-tab-btn {
-      background: transparent;
-      color: var(--accent);
-      border: none;
-      padding: 8px 12px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .bottom-controls {
-      display: flex;
-      border-top: var(--border-thick) solid var(--border);
-      background: var(--app-bg);
-    }
-
-    .tool-btn {
-      background: transparent;
-      color: var(--text);
-      border: none;
-      border-right: var(--border-thin) solid var(--border);
-      padding: 10px 14px;
-      font-size: 11px;
-      cursor: pointer;
-    }
-
-    .tool-btn:hover {
-      background: var(--text);
-      color: var(--app-bg);
-    }
-
-    .export-btn {
-      margin-left: auto;
-      background: var(--accent);
-      color: #000000;
-      font-weight: bold;
-      border: none;
-      padding: 10px 16px;
-      font-family: 'Oswald', sans-serif;
-      letter-spacing: 1px;
-      cursor: pointer;
+    /* CONTENEDOR DE GRÁFICO (MODAL) */
+    #chartModal {
+      display: none; position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
+      width: 90%; max-width: 500px; background: var(--app-bg); border: var(--border-thick) solid var(--border);
+      padding: 16px; z-index: 10; box-shadow: 0 0 20px rgba(0,0,0,0.8);
     }
   </style>
 </head>
 <body>
 
   <div class="app-frame">
-    <!-- ENCABEZADO -->
     <header>
-      <button class="header-btn" onclick="addRow()">+FILA</button>
-      <div class="brand-title">MEOW SHEETS</div>
-      <button class="header-btn" id="theme-toggle" onclick="toggleTheme()">🌙</button>
-      <button class="header-btn" style="border-right: none;" onclick="addCol()">+COL</button>
+      <button class="header-btn" onclick="modifyStructure('addRow')">+FILA</button>
+      <div class="brand-title">MEOW SHEETS PRO</div>
+      <button class="header-btn" onclick="toggleTheme()">🌙</button>
+      <button class="header-btn" style="border-right: none;" onclick="modifyStructure('addCol')">+COL</button>
     </header>
+
+    <!-- BARRA DE HERRAMIENTAS DE FORMATO Y DATOS -->
+    <div class="toolbar">
+      <button class="header-btn" style="padding: 4px 8px;" onclick="applyFormat('bold')"><b>B</b></button>
+      <button class="header-btn" style="padding: 4px 8px;" onclick="applyFormat('wrap')">Wrap</button>
+      
+      <!-- Formatos de número -->
+      <select class="tool-select" id="formatType" onchange="setCellFormat(this.value)">
+        <option value="text">Texto</option>
+        <option value="currency">Moneda ($)</option>
+        <option value="percent">Porcentaje (%)</option>
+      </select>
+
+      <!-- Colores -->
+      <label style="font-size:10px;"> Color: <input type="color" class="tool-input-color" id="textColor" onchange="applyStyle('color', this.value)"></label>
+      <label style="font-size:10px;"> Fondo: <input type="color" class="tool-input-color" id="bgColor" onchange="applyStyle('backgroundColor', this.value)"></label>
+
+      <!-- Gráficos y Estructura -->
+      <button class="header-btn" style="padding: 4px 8px;" onclick="generateChart()">📊 Gráfico</button>
+      <button class="header-btn" style="padding: 4px 8px;" onclick="modifyStructure('delRow')">-Fila</button>
+      <button class="header-btn" style="padding: 4px 8px; border-right:none;" onclick="modifyStructure('delCol')">-Col</button>
+    </div>
 
     <!-- BARRA DE FÓRMULAS -->
     <div class="formula-bar">
       <div class="cell-address" id="selectedCellAddr">A1</div>
-      <input type="text" class="formula-input" id="formulaInput" placeholder="Escribe un valor o fórmula (=SUMA(A1:A5))..." oninput="onFormulaInput(this.value)" onkeydown="handleFormulaKey(event)">
+      <input type="text" class="formula-input" id="formulaInput" placeholder="Fórmulas: =SUMA(A1:A5), =PROMEDIO(A1:A5), =MAX(), =MIN(), =SI(A1>10; 'SI'; 'NO')" oninput="onFormulaInput(this.value)">
     </div>
 
-    <!-- MATRIZ DE HOJA -->
+    <!-- TABLA DE CELDAS -->
     <div class="sheet-container">
       <table class="grid-table" id="gridTable">
-        <thead>
-          <tr id="headerRow">
-            <th class="row-header">#</th>
-            <!-- Columnas dinámicas -->
-          </tr>
-        </thead>
-        <tbody id="gridBody">
-          <!-- Filas dinámicas -->
-        </tbody>
+        <thead><tr id="headerRow"><th class="row-header">#</th></tr></thead>
+        <tbody id="gridBody"></tbody>
       </table>
     </div>
 
-    <!-- PESTAÑAS DE HOJAS -->
+    <!-- PESTAÑAS Y CONTROLES -->
     <div class="sheet-tabs" id="tabsBar">
       <button class="tab-btn active" onclick="switchSheet(0)">HOJA 1</button>
-      <button class="add-tab-btn" onclick="addNewSheet()">+ Nueva Hoja</button>
+      <button class="tab-btn" style="color:var(--accent);" onclick="addNewSheet()">+ Nueva Hoja</button>
     </div>
 
-    <!-- BARRA INFERIOR -->
     <div class="bottom-controls">
-      <button class="tool-btn" onclick="applyFormat('bold')"><b>B</b></button>
-      <button class="tool-btn" onclick="applyFormat('align-left')">←</button>
-      <button class="tool-btn" onclick="applyFormat('align-center')">↔</button>
-      <button class="tool-btn" onclick="applyFormat('align-right')">→</button>
-      <button class="tool-btn" onclick="clearSheet()">Vaciar</button>
+      <button class="header-btn" style="padding: 10px 14px;" onclick="saveToStorage()">💾 Guardar</button>
+      <button class="header-btn" style="padding: 10px 14px;" onclick="clearSheet()">Vaciar</button>
       <button class="export-btn" onclick="exportToExcel()">EXPORTAR .XLSX</button>
     </div>
+  </div>
+
+  <!-- MODAL DE GRÁFICO (CHART.JS) -->
+  <div id="chartModal">
+    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+      <span style="font-weight:bold; font-size:12px;">Vista Previa de Gráfico</span>
+      <button onclick="document.getElementById('chartModal').style.display='none'" style="background:none; color:var(--text); border:none; cursor:pointer;">✕</button>
+    </div>
+    <canvas id="myChart"></canvas>
   </div>
 
   <script>
     let numRows = 20;
     let numCols = 10;
     let currentSheetIndex = 0;
-    let sheetsData = [{}]; // Guarda los datos brutos/fórmulas de cada hoja
+    let sheetsData = [{}]; 
+    let cellFormats = [{}]; 
+    let cellStyles = [{}];  
     let activeCell = { row: 1, col: 1 };
+    let chartInstance = null;
 
     function getColName(colIdx) {
       let temp, letter = '';
@@ -364,11 +249,12 @@
           td.contentEditable = true;
           td.addEventListener('focus', () => selectCell(r, c));
           td.addEventListener('input', (e) => onCellEdit(r, c, e.target.innerText));
-          td.addEventListener('keydown', (e) => handleCellNavigation(e, r, c));
+          td.addEventListener('keydown', (e) => handleKeyEvents(e, r, c));
           tr.appendChild(td);
         }
         gridBody.appendChild(tr);
       }
+      loadFromStorage();
       renderSheet();
     }
 
@@ -383,6 +269,7 @@
         td.classList.add('selected');
         const rawVal = sheetsData[currentSheetIndex][cellKey] || '';
         document.getElementById('formulaInput').value = rawVal;
+        document.getElementById('formatType').value = (cellFormats[currentSheetIndex] && cellFormats[currentSheetIndex][cellKey]) || 'text';
       }
     }
 
@@ -394,6 +281,7 @@
       const cellKey = `${getColName(c)}${r}`;
       sheetsData[currentSheetIndex][cellKey] = val;
       evaluateAllFormulas();
+      saveToStorage();
     }
 
     function onFormulaInput(val) {
@@ -401,29 +289,36 @@
       const cellKey = `${getColName(col)}${row}`;
       sheetsData[currentSheetIndex][cellKey] = val;
       evaluateAllFormulas();
-    }
-
-    function handleFormulaKey(e) {
-      if (e.key === 'Enter') {
-        const td = getTdElement(activeCell.row, activeCell.col);
-        if (td) td.focus();
-      }
+      saveToStorage();
     }
 
     function evaluateAllFormulas() {
       const currentData = sheetsData[currentSheetIndex];
+      const currentFmt = cellFormats[currentSheetIndex] || {};
+
       for (let r = 1; r <= numRows; r++) {
         for (let c = 1; c <= numCols; c++) {
           const cellKey = `${getColName(c)}${r}`;
           const td = getTdElement(r, c);
-          const rawVal = currentData[cellKey] || '';
+          if (!td) continue;
+
+          let rawVal = currentData[cellKey] || '';
+          let displayVal = rawVal;
 
           if (rawVal.startsWith('=')) {
-            td.innerText = parseFormula(rawVal.substring(1), currentData);
-          } else {
-            if (document.activeElement !== td) {
-              td.innerText = rawVal;
-            }
+            displayVal = parseFormula(rawVal.substring(1), currentData);
+          }
+
+          // Aplicar formatos numéricos
+          const fmt = currentFmt[cellKey];
+          if (fmt === 'currency' && !isNaN(parseFloat(displayVal))) {
+            displayVal = '$' + parseFloat(displayVal).toFixed(2);
+          } else if (fmt === 'percent' && !isNaN(parseFloat(displayVal))) {
+            displayVal = (parseFloat(displayVal) * 100).toFixed(1) + '%';
+          }
+
+          if (document.activeElement !== td) {
+            td.innerText = displayVal;
           }
         }
       }
@@ -431,15 +326,31 @@
 
     function parseFormula(formula, data) {
       try {
-        let clean = formula.toUpperCase();
+        let clean = formula.toUpperCase().trim();
 
-        // Soporte básico para =SUMA(A1:A5)
-        if (clean.startsWith('SUMA(') && clean.endsWith(')')) {
-          const rangeStr = clean.slice(5, -1);
-          return computeRange(rangeStr, data, (acc, val) => acc + val, 0);
+        // Operaciones de Rangos
+        if (clean.includes('(') && clean.endsWith(')')) {
+          const fnName = clean.substring(0, clean.indexOf('('));
+          const rangeStr = clean.substring(clean.indexOf('(') + 1, clean.length - 1);
+          const values = getValuesFromRange(rangeStr, data);
+
+          if (fnName === 'SUMA') return values.reduce((a, b) => a + b, 0);
+          if (fnName === 'PROMEDIO') return values.length ? (values.reduce((a, b) => a + b, 0) / values.length) : 0;
+          if (fnName === 'MAX') return values.length ? Math.max(...values) : 0;
+          if (fnName === 'MIN') return values.length ? Math.min(...values) : 0;
+          if (fnName === 'CONTAR') return values.length;
         }
 
-        // Reemplazo directo de variables como A1 + B1
+        // Lógica condicional básica: SI(A1>10; 'SI'; 'NO')
+        if (clean.startsWith('SI(') && clean.endsWith(')')) {
+          const args = clean.substring(3, clean.length - 1).split(';');
+          const condition = args[0].replace(/[A-Z]+[0-9]+/g, m => parseFloat(data[m]) || 0);
+          const resTrue = args[1] ? args[1].trim().replace(/'/g, '') : 'VERDADERO';
+          const resFalse = args[2] ? args[2].trim().replace(/'/g, '') : 'FALSO';
+          return Function(`'use strict'; return (${condition})`)() ? resTrue : resFalse;
+        }
+
+        // Evaluación Matemática Estándar
         clean = clean.replace(/[A-Z]+[0-9]+/g, (match) => {
           const val = parseFloat(data[match]);
           return isNaN(val) ? 0 : val;
@@ -451,58 +362,87 @@
       }
     }
 
-    function computeRange(rangeStr, data, callback, initialVal) {
+    function getValuesFromRange(rangeStr, data) {
       const parts = rangeStr.split(':');
-      if (parts.length !== 2) return 0;
+      if (parts.length !== 2) return [];
 
       const startCol = parts[0].match(/[A-Z]+/)[0];
       const startRow = parseInt(parts[0].match(/[0-9]+/)[0], 10);
       const endCol = parts[1].match(/[A-Z]+/)[0];
       const endRow = parseInt(parts[1].match(/[0-9]+/)[0], 10);
 
-      let total = initialVal;
+      let values = [];
       for (let r = startRow; r <= endRow; r++) {
         const key = `${startCol}${r}`;
         const val = parseFloat(data[key]);
-        if (!isNaN(val)) {
-          total = callback(total, val);
-        }
+        if (!isNaN(val)) values.push(val);
       }
-      return total;
+      return values;
     }
 
-    function handleCellNavigation(e, r, c) {
+    function handleKeyEvents(e, r, c) {
       if (e.key === 'Enter') {
         e.preventDefault();
         selectCell(Math.min(r + 1, numRows), c);
         getTdElement(Math.min(r + 1, numRows), c).focus();
-      } else if (e.key === 'Tab') {
-        e.preventDefault();
-        selectCell(r, Math.min(c + 1, numCols));
-        getTdElement(r, Math.min(c + 1, numCols)).focus();
       }
     }
 
-    function renderSheet() {
+    /* FORMATO Y ESTILOS DE CELDAS */
+    function applyFormat(type) {
+      const td = getTdElement(activeCell.row, activeCell.col);
+      if (!td) return;
+      if (type === 'bold') td.style.fontWeight = td.style.fontWeight === 'bold' ? 'normal' : 'bold';
+      if (type === 'wrap') td.classList.toggle('wrap-text');
+      saveStyles(activeCell.row, activeCell.col);
+    }
+
+    function applyStyle(prop, val) {
+      const td = getTdElement(activeCell.row, activeCell.col);
+      if (td) {
+        td.style[prop] = val;
+        saveStyles(activeCell.row, activeCell.col);
+      }
+    }
+
+    function setCellFormat(fmt) {
+      const cellKey = `${getColName(activeCell.col)}${activeCell.row}`;
+      if (!cellFormats[currentSheetIndex]) cellFormats[currentSheetIndex] = {};
+      cellFormats[currentSheetIndex][cellKey] = fmt;
       evaluateAllFormulas();
-      selectCell(activeCell.row, activeCell.col);
+      saveToStorage();
     }
 
-    function addRow() {
-      numRows++;
+    function saveStyles(r, c) {
+      const cellKey = `${getColName(c)}${r}`;
+      const td = getTdElement(r, c);
+      if (!cellStyles[currentSheetIndex]) cellStyles[currentSheetIndex] = {};
+      cellStyles[currentSheetIndex][cellKey] = {
+        fontWeight: td.style.fontWeight,
+        color: td.style.color,
+        backgroundColor: td.style.backgroundColor,
+        wrap: td.classList.contains('wrap-text')
+      };
+      saveToStorage();
+    }
+
+    /* MODIFICACIÓN DE ESTRUCTURA */
+    function modifyStructure(action) {
+      if (action === 'addRow') numRows++;
+      if (action === 'addCol') numCols++;
+      if (action === 'delRow' && numRows > 1) numRows--;
+      if (action === 'delCol' && numCols > 1) numCols--;
       initGrid();
     }
 
-    function addCol() {
-      numCols++;
-      initGrid();
-    }
-
+    /* PESTAÑAS DE HOJAS */
     function addNewSheet() {
       sheetsData.push({});
+      cellFormats.push({});
+      cellStyles.push({});
       const idx = sheetsData.length - 1;
       const tabsBar = document.getElementById('tabsBar');
-      const addBtn = tabsBar.querySelector('.add-tab-btn');
+      const addBtn = tabsBar.querySelector('button[onclick="addNewSheet()"]');
 
       const btn = document.createElement('button');
       btn.className = 'tab-btn';
@@ -521,22 +461,95 @@
       renderSheet();
     }
 
-    function applyFormat(type) {
-      const td = getTdElement(activeCell.row, activeCell.col);
-      if (!td) return;
-      if (type === 'bold') td.style.fontWeight = td.style.fontWeight === 'bold' ? 'normal' : 'bold';
-      if (type === 'align-left') td.style.textAlign = 'left';
-      if (type === 'align-center') td.style.textAlign = 'center';
-      if (type === 'align-right') td.style.textAlign = 'right';
+    function renderSheet() {
+      // Re-aplicar estilos guardados
+      const currentSty = cellStyles[currentSheetIndex] || {};
+      for (let key in currentSty) {
+        const colStr = key.match(/[A-Z]+/)[0];
+        const rowStr = parseInt(key.match(/[0-9]+/)[0], 10);
+        // Convertir letra a indice de columna
+        let colIdx = 0;
+        for (let i = 0; i < colStr.length; i++) {
+          colIdx = colIdx * 26 + colStr.charCodeAt(i) - 64;
+        }
+        const td = getTdElement(rowStr, colIdx);
+        if (td) {
+          td.style.fontWeight = currentSty[key].fontWeight || 'normal';
+          td.style.color = currentSty[key].color || '';
+          td.style.backgroundColor = currentSty[key].backgroundColor || '';
+          if (currentSty[key].wrap) td.classList.add('wrap-text');
+        }
+      }
+      evaluateAllFormulas();
+      selectCell(activeCell.row, activeCell.col);
+    }
+
+    /* GENERACIÓN DE GRÁFICOS (CHART.JS) */
+    function generateChart() {
+      const labels = [];
+      const data = [];
+      
+      // Lee los primeros 6 valores numéricos de la columna actual
+      for (let r = 1; r <= 8; r++) {
+        const cellKey = `${getColName(activeCell.col)}${r}`;
+        const val = parseFloat(sheetsData[currentSheetIndex][cellKey]);
+        if (!isNaN(val)) {
+          labels.push(`Fila ${r}`);
+          data.push(val);
+        }
+      }
+
+      if (data.length === 0) {
+        alert("Ingresa valores numéricos en la columna para generar un gráfico.");
+        return;
+      }
+
+      document.getElementById('chartModal').style.display = 'block';
+      const ctx = document.getElementById('myChart').getContext('2d');
+
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `Datos Columna ${getColName(activeCell.col)}`,
+            data: data,
+            backgroundColor: '#00ff66'
+          }]
+        },
+        options: { responsive: true }
+      });
+    }
+
+    /* PERSISTENCIA EN STORAGE */
+    function saveToStorage() {
+      localStorage.setItem('meow_sheets_data', JSON.stringify(sheetsData));
+      localStorage.setItem('meow_sheets_formats', JSON.stringify(cellFormats));
+      localStorage.setItem('meow_sheets_styles', JSON.stringify(cellStyles));
+    }
+
+    function loadFromStorage() {
+      const d = localStorage.getItem('meow_sheets_data');
+      const f = localStorage.getItem('meow_sheets_formats');
+      const s = localStorage.getItem('meow_sheets_styles');
+      if (d) sheetsData = JSON.parse(d);
+      if (f) cellFormats = JSON.parse(f);
+      if (s) cellStyles = JSON.parse(s);
     }
 
     function clearSheet() {
-      if (confirm('¿Vaciar los datos de la hoja actual?')) {
+      if (confirm('¿Vaciar todos los datos de la hoja?')) {
         sheetsData[currentSheetIndex] = {};
-        renderSheet();
+        cellFormats[currentSheetIndex] = {};
+        cellStyles[currentSheetIndex] = {};
+        saveToStorage();
+        initGrid();
       }
     }
 
+    /* EXPORTAR A EXCEL */
     function exportToExcel() {
       const wb = XLSX.utils.book_new();
       sheetsData.forEach((sheet, idx) => {
@@ -552,14 +565,13 @@
         const ws = XLSX.utils.aoa_to_sheet(aoa);
         XLSX.utils.book_append_sheet(wb, ws, `Hoja ${idx + 1}`);
       });
-      XLSX.writeFile(wb, 'meow_sheets.xlsx');
+      XLSX.writeFile(wb, 'meow_sheets_pro.xlsx');
     }
 
     function toggleTheme() {
       document.body.classList.toggle('light-mode');
     }
 
-    // Inicialización
     initGrid();
   </script>
 </body>
