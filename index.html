@@ -18,7 +18,6 @@
 
   <style>
     :root {
-      --accent: #ffffff;
       --bg: #050505;
       --app-bg: #000000;
       --text: #ffffff;
@@ -52,14 +51,6 @@
       display: flex; flex-direction: column; background-color: var(--app-bg);
       border: 3px solid var(--border); overflow: hidden; position: relative;
     }
-
-/* Estilo para los indicadores visuales en el menú */
-.color-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
 
     header {
       display: grid; grid-template-columns: 44px 1fr 44px;
@@ -129,8 +120,13 @@
       background: var(--app-bg); color: var(--text); border: var(--border-thin) solid var(--border);
       padding: 6px 10px; font-size: 11px; cursor: pointer; text-transform: uppercase;
       font-family: 'Source Code Pro', monospace; text-align: left; transition: 0.2s;
+      display: flex; align-items: center; gap: 8px;
     }
     .menu-action:hover { background: var(--text); color: var(--app-bg); }
+
+    .color-dot {
+      width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+    }
 
     .tool-select, .tool-input-color, .tool-input {
       background: var(--app-bg); color: var(--text); border: var(--border-thin) solid var(--border);
@@ -195,6 +191,56 @@
     .tab-btn { background: transparent; color: var(--subtext); border: none; border-right: var(--border-thin) solid var(--border); padding: 8px 16px; font-size: 10px; cursor: pointer; text-transform: uppercase; }
     .tab-btn.active { color: var(--text); font-weight: bold; border-top: 2px solid var(--accent); background: var(--cell-active); }
 
+    /* BOTÓN FLOTANTE DE EXPORTAR */
+    .export-floating-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      display: inline-flex;
+      align-items: stretch;
+      background-color: #000000;
+      border: 2px solid var(--accent);
+      cursor: pointer;
+      z-index: 100;
+      user-select: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .export-floating-btn:hover {
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .export-btn-prefix {
+      background-color: #000000;
+      color: #ffffff;
+      padding: 6px 10px;
+      font-family: monospace;
+      font-size: 14px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 2px solid var(--accent);
+    }
+
+    .export-btn-main {
+      background-color: #ffffff;
+      color: #000000;
+      padding: 6px 14px;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .export-btn-main .arrow-up {
+      font-size: 10px;
+    }
+
     /* MODALES NATIVAS */
     .modal {
       display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -210,21 +256,11 @@
     @media print {
       body { padding: 0; background: #fff; color: #000; }
       .app-frame { border: none; max-width: 100%; height: auto; }
-      header, .formula-bar, .sheet-tabs, .sidebar, .sidebar-overlay, .modal { display: none !important; }
+      header, .formula-bar, .sheet-tabs, .sidebar, .sidebar-overlay, .modal, .export-floating-btn { display: none !important; }
       .sheet-container { overflow: visible; }
       table.grid-table { border: 1px solid #000; }
       th, td { border: 1px solid #000; color: #000 !important; background: #fff !important; }
     }
-    /* Variaciones Neon*/
-    
-    body.accent-green   { --accent: #00ff66; --border: #00ff66; }
-body.accent-magenta { --accent: #ff007f; --border: #ff007f; }
-body.accent-cyan    { --accent: #00f3ff; --border: #00f3ff; }
-body.accent-yellow  { --accent: #ffe600; --border: #ffe600; }
-body.accent-amber   { --accent: #ffb000; --border: #ffb000; }
-
-}
-    
   </style>
 </head>
 <body>
@@ -247,6 +283,36 @@ body.accent-amber   { --accent: #ffb000; --border: #ffb000; }
         <span>HERRAMIENTAS</span>
         <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
       </div>
+
+      <!-- SECCIÓN COLOR NEÓN ACENTO -->
+      <details>
+        <summary>🌈 Color Neón Acento</summary>
+        <div class="menu-group">
+          <button class="menu-action" onclick="changeAccentColor('#00ff66')">
+            <span class="color-dot" style="background:#00ff66;"></span> Verde Cyber
+          </button>
+          <button class="menu-action" onclick="changeAccentColor('#ff007f')">
+            <span class="color-dot" style="background:#ff007f;"></span> Magenta Neón
+          </button>
+          <button class="menu-action" onclick="changeAccentColor('#00f3ff')">
+            <span class="color-dot" style="background:#00f3ff;"></span> Cyan Eléctrico
+          </button>
+          <button class="menu-action" onclick="changeAccentColor('#ffe600')">
+            <span class="color-dot" style="background:#ffe600;"></span> Amarillo Neón
+          </button>
+          <button class="menu-action" onclick="changeAccentColor('#ffb000')">
+            <span class="color-dot" style="background:#ffb000;"></span> Ámbar Neón
+          </button>
+          <button class="menu-action" onclick="changeAccentColor('#ffffff')">
+            <span class="color-dot" style="background:#ffffff; border: 1px solid #888;"></span> Monocromo
+          </button>
+          
+          <div class="color-picker-row" style="margin-top:4px;">
+            <span>Personalizado:</span>
+            <input type="color" id="appAccentColor" value="#00ff66" onchange="changeAccentColor(this.value)">
+          </div>
+        </div>
+      </details>
 
       <details>
         <summary>📁 Archivo</summary>
@@ -277,13 +343,6 @@ body.accent-amber   { --accent: #ffb000; --border: #ffb000; }
       <details>
         <summary>🎨 Formato & Personalización</summary>
         <div class="menu-group">
-          <!-- Acento de Color de la App -->
-          <div class="color-picker-row">
-            <span>Color de Acento App:</span>
-            <input type="color" id="appAccentColor" value="#00ff66" onchange="changeAccentColor(this.value)">
-          </div>
-          <hr style="border:0; border-top:1px dashed var(--border); margin: 4px 0;">
-          
           <button class="menu-action" onclick="applyFormat('bold')"><b>B</b> Alternar Negrita</button>
           <button class="menu-action" onclick="applyFormat('wrap')">Alternar Ajuste de Texto</button>
           
@@ -348,6 +407,14 @@ body.accent-amber   { --accent: #ffb000; --border: #ffb000; }
     <div class="sheet-tabs" id="tabsBar">
       <button class="tab-btn active" onclick="switchSheet(0)">HOJA 1</button>
       <button class="tab-btn" style="color:var(--accent);" onclick="addNewSheet()">+ Nueva Hoja</button>
+    </div>
+
+    <!-- BOTÓN FLOTANTE INFERIOR DERECHO: EXPORTAR -->
+    <div class="export-floating-btn" onclick="exportToExcel()">
+      <div class="export-btn-prefix">&rarr;</div>
+      <div class="export-btn-main">
+        EXPORTAR <span class="arrow-up">&#9650;</span>
+      </div>
     </div>
 
   </div>
@@ -425,6 +492,8 @@ body.accent-amber   { --accent: #ffb000; --border: #ffb000; }
     function changeAccentColor(color) {
       document.documentElement.style.setProperty('--accent', color);
       localStorage.setItem('meow_sheets_accent', color);
+      const picker = document.getElementById('appAccentColor');
+      if (picker) picker.value = color;
     }
 
     /* INICIALIZACIÓN DE MATRIZ */
@@ -808,7 +877,7 @@ body.accent-amber   { --accent: #ffb000; --border: #ffb000; }
     function loadFromStorage() {
       const d = localStorage.getItem('meow_sheets_data'), f = localStorage.getItem('meow_sheets_formats'), a = localStorage.getItem('meow_sheets_accent');
       if (d) sheetsData = JSON.parse(d); if (f) cellFormats = JSON.parse(f);
-      if (a) { document.getElementById('appAccentColor').value = a; changeAccentColor(a); }
+      if (a) { changeAccentColor(a); }
     }
     function clearSheet() { if (confirm('¿Vaciar la hoja?')) { sheetsData[currentSheetIndex] = {}; cellFormats[currentSheetIndex] = {}; saveToStorage(); initGrid(); } }
     function exportToExcel() {
