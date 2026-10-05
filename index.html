@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Meow Sheets - Ultimate Edition</title>
+
+  <!-- Tipografías -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Librería SheetJS para Exportación a Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #050505;
+      --app-bg: #000000;
+      --text: #ffffff;
+      --border: #ffffff;
+      --subtext: #888888;
+      --grid-line: #222222;
+      --cell-bg: #000000;
+      --cell-active: #111111;
+      --accent: #00ff66;
+
+      --border-outer: 3px;
+      --border-thick: 2px;
+      --border-thin: 1px;
+    }
+
+    body.light-mode {
+      --bg: #f0f0f0;
+      --app-bg: #ffffff;
+      --text: #000000;
+      --border: #000000;
+      --subtext: #666666;
+      --grid-line: #e0e0e0;
+      --cell-bg: #ffffff;
+      --cell-active: #f5f5f5;
+      --accent: #008037;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Source Code Pro', monospace;
+    }
+
+    body {
+      padding: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .app-frame {
+      width: 100%;
+      max-width: 1000px;
+      height: 100%;
+      max-height: calc(100dvh - 16px);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      background-color: var(--app-bg);
+      border: var(--border-outer) solid var(--border);
+      overflow: hidden;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 44px 1fr 44px 70px;
+      border-bottom: var(--border-thick) solid var(--border);
+      align-items: stretch;
+      flex-shrink: 0;
+    }
+
+    .header-btn {
+      background: transparent;
+      color: var(--text);
+      border: none;
+      border-right: var(--border-thick) solid var(--border);
+      padding: 10px 4px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-btn:hover {
+      background: var(--text);
+      color: var(--app-bg);
+    }
+
+    .brand-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 18px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 10px 0;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* BARRA DE FÓRMULAS */
+    .formula-bar {
+      display: flex;
+      align-items: center;
+      border-bottom: var(--border-thick) solid var(--border);
+      background: var(--app-bg);
+    }
+
+    .cell-address {
+      width: 60px;
+      padding: 8px;
+      font-weight: bold;
+      text-align: center;
+      border-right: var(--border-thin) solid var(--border);
+      color: var(--accent);
+      font-size: 12px;
+    }
+
+    .formula-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      padding: 8px 12px;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 12px;
+      outline: none;
+    }
+
+    /* CONTENEDOR DE LA MATRIZ DE CELDAS */
+    .sheet-container {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+
+    table.grid-table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    th, td {
+      border: var(--border-thin) solid var(--grid-line);
+      min-width: 90px;
+      max-width: 150px;
+      height: 28px;
+      font-size: 11px;
+      padding: 2px 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    th {
+      background: var(--app-bg);
+      color: var(--subtext);
+      font-weight: bold;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      border-bottom: var(--border-thick) solid var(--border);
+      user-select: none;
+    }
+
+    th.row-header {
+      width: 40px;
+      min-width: 40px;
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      border-right: var(--border-thick) solid var(--border);
+    }
+
+    td {
+      background: var(--cell-bg);
+      color: var(--text);
+      outline: none;
+    }
+
+    td.selected {
+      border: 2px solid var(--accent) !important;
+      background: var(--cell-active);
+    }
+
+    /* BARRA INFERIOR Y PESTAÑAS */
+    .sheet-tabs {
+      display: flex;
+      border-top: var(--border-thick) solid var(--border);
+      background: var(--app-bg);
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: var(--subtext);
+      border: none;
+      border-right: var(--border-thin) solid var(--border);
+      padding: 8px 16px;
+      font-size: 10px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      color: var(--text);
+      font-weight: bold;
+      border-top: 2px solid var(--accent);
+      background: var(--cell-active);
+    }
+
+    .add-tab-btn {
+      background: transparent;
+      color: var(--accent);
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .bottom-controls {
+      display: flex;
+      border-top: var(--border-thick) solid var(--border);
+      background: var(--app-bg);
+    }
+
+    .tool-btn {
+      background: transparent;
+      color: var(--text);
+      border: none;
+      border-right: var(--border-thin) solid var(--border);
+      padding: 10px 14px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .tool-btn:hover {
+      background: var(--text);
+      color: var(--app-bg);
+    }
+
+    .export-btn {
+      margin-left: auto;
+      background: var(--accent);
+      color: #000000;
+      font-weight: bold;
+      border: none;
+      padding: 10px 16px;
+      font-family: 'Oswald', sans-serif;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-frame">
+    <!-- ENCABEZADO -->
+    <header>
+      <button class="header-btn" onclick="addRow()">+FILA</button>
+      <div class="brand-title">MEOW SHEETS</div>
+      <button class="header-btn" id="theme-toggle" onclick="toggleTheme()">🌙</button>
+      <button class="header-btn" style="border-right: none;" onclick="addCol()">+COL</button>
+    </header>
+
+    <!-- BARRA DE FÓRMULAS -->
+    <div class="formula-bar">
+      <div class="cell-address" id="selectedCellAddr">A1</div>
+      <input type="text" class="formula-input" id="formulaInput" placeholder="Escribe un valor o fórmula (=SUMA(A1:A5))..." oninput="onFormulaInput(this.value)" onkeydown="handleFormulaKey(event)">
+    </div>
+
+    <!-- MATRIZ DE HOJA -->
+    <div class="sheet-container">
+      <table class="grid-table" id="gridTable">
+        <thead>
+          <tr id="headerRow">
+            <th class="row-header">#</th>
+            <!-- Columnas dinámicas -->
+          </tr>
+        </thead>
+        <tbody id="gridBody">
+          <!-- Filas dinámicas -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PESTAÑAS DE HOJAS -->
+    <div class="sheet-tabs" id="tabsBar">
+      <button class="tab-btn active" onclick="switchSheet(0)">HOJA 1</button>
+      <button class="add-tab-btn" onclick="addNewSheet()">+ Nueva Hoja</button>
+    </div>
+
+    <!-- BARRA INFERIOR -->
+    <div class="bottom-controls">
+      <button class="tool-btn" onclick="applyFormat('bold')"><b>B</b></button>
+      <button class="tool-btn" onclick="applyFormat('align-left')">←</button>
+      <button class="tool-btn" onclick="applyFormat('align-center')">↔</button>
+      <button class="tool-btn" onclick="applyFormat('align-right')">→</button>
+      <button class="tool-btn" onclick="clearSheet()">Vaciar</button>
+      <button class="export-btn" onclick="exportToExcel()">EXPORTAR .XLSX</button>
+    </div>
+  </div>
+
+  <script>
+    let numRows = 20;
+    let numCols = 10;
+    let currentSheetIndex = 0;
+    let sheetsData = [{}]; // Guarda los datos brutos/fórmulas de cada hoja
+    let activeCell = { row: 1, col: 1 };
+
+    function getColName(colIdx) {
+      let temp, letter = '';
+      while (colIdx > 0) {
+        temp = (colIdx - 1) % 26;
+        letter = String.fromCharCode(65 + temp) + letter;
+        colIdx = (colIdx - temp - 1) / 26;
+      }
+      return letter;
+    }
+
+    function initGrid() {
+      const headerRow = document.getElementById('headerRow');
+      headerRow.innerHTML = '<th class="row-header">#</th>';
+      for (let c = 1; c <= numCols; c++) {
+        const th = document.createElement('th');
+        th.innerText = getColName(c);
+        headerRow.appendChild(th);
+      }
+
+      const gridBody = document.getElementById('gridBody');
+      gridBody.innerHTML = '';
+      for (let r = 1; r <= numRows; r++) {
+        const tr = document.createElement('tr');
+        const th = document.createElement('th');
+        th.className = 'row-header';
+        th.innerText = r;
+        tr.appendChild(th);
+
+        for (let c = 1; c <= numCols; c++) {
+          const td = document.createElement('td');
+          td.dataset.row = r;
+          td.dataset.col = c;
+          td.contentEditable = true;
+          td.addEventListener('focus', () => selectCell(r, c));
+          td.addEventListener('input', (e) => onCellEdit(r, c, e.target.innerText));
+          td.addEventListener('keydown', (e) => handleCellNavigation(e, r, c));
+          tr.appendChild(td);
+        }
+        gridBody.appendChild(tr);
+      }
+      renderSheet();
+    }
+
+    function selectCell(r, c) {
+      document.querySelectorAll('td.selected').forEach(el => el.classList.remove('selected'));
+      activeCell = { row: r, col: c };
+      const cellKey = `${getColName(c)}${r}`;
+      document.getElementById('selectedCellAddr').innerText = cellKey;
+
+      const td = getTdElement(r, c);
+      if (td) {
+        td.classList.add('selected');
+        const rawVal = sheetsData[currentSheetIndex][cellKey] || '';
+        document.getElementById('formulaInput').value = rawVal;
+      }
+    }
+
+    function getTdElement(r, c) {
+      return document.querySelector(`td[data-row="${r}"][data-col="${c}"]`);
+    }
+
+    function onCellEdit(r, c, val) {
+      const cellKey = `${getColName(c)}${r}`;
+      sheetsData[currentSheetIndex][cellKey] = val;
+      evaluateAllFormulas();
+    }
+
+    function onFormulaInput(val) {
+      const { row, col } = activeCell;
+      const cellKey = `${getColName(col)}${row}`;
+      sheetsData[currentSheetIndex][cellKey] = val;
+      evaluateAllFormulas();
+    }
+
+    function handleFormulaKey(e) {
+      if (e.key === 'Enter') {
+        const td = getTdElement(activeCell.row, activeCell.col);
+        if (td) td.focus();
+      }
+    }
+
+    function evaluateAllFormulas() {
+      const currentData = sheetsData[currentSheetIndex];
+      for (let r = 1; r <= numRows; r++) {
+        for (let c = 1; c <= numCols; c++) {
+          const cellKey = `${getColName(c)}${r}`;
+          const td = getTdElement(r, c);
+          const rawVal = currentData[cellKey] || '';
+
+          if (rawVal.startsWith('=')) {
+            td.innerText = parseFormula(rawVal.substring(1), currentData);
+          } else {
+            if (document.activeElement !== td) {
+              td.innerText = rawVal;
+            }
+          }
+        }
+      }
+    }
+
+    function parseFormula(formula, data) {
+      try {
+        let clean = formula.toUpperCase();
+
+        // Soporte básico para =SUMA(A1:A5)
+        if (clean.startsWith('SUMA(') && clean.endsWith(')')) {
+          const rangeStr = clean.slice(5, -1);
+          return computeRange(rangeStr, data, (acc, val) => acc + val, 0);
+        }
+
+        // Reemplazo directo de variables como A1 + B1
+        clean = clean.replace(/[A-Z]+[0-9]+/g, (match) => {
+          const val = parseFloat(data[match]);
+          return isNaN(val) ? 0 : val;
+        });
+
+        return Function(`'use strict'; return (${clean})`)();
+      } catch (err) {
+        return '#ERROR!';
+      }
+    }
+
+    function computeRange(rangeStr, data, callback, initialVal) {
+      const parts = rangeStr.split(':');
+      if (parts.length !== 2) return 0;
+
+      const startCol = parts[0].match(/[A-Z]+/)[0];
+      const startRow = parseInt(parts[0].match(/[0-9]+/)[0], 10);
+      const endCol = parts[1].match(/[A-Z]+/)[0];
+      const endRow = parseInt(parts[1].match(/[0-9]+/)[0], 10);
+
+      let total = initialVal;
+      for (let r = startRow; r <= endRow; r++) {
+        const key = `${startCol}${r}`;
+        const val = parseFloat(data[key]);
+        if (!isNaN(val)) {
+          total = callback(total, val);
+        }
+      }
+      return total;
+    }
+
+    function handleCellNavigation(e, r, c) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        selectCell(Math.min(r + 1, numRows), c);
+        getTdElement(Math.min(r + 1, numRows), c).focus();
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        selectCell(r, Math.min(c + 1, numCols));
+        getTdElement(r, Math.min(c + 1, numCols)).focus();
+      }
+    }
+
+    function renderSheet() {
+      evaluateAllFormulas();
+      selectCell(activeCell.row, activeCell.col);
+    }
+
+    function addRow() {
+      numRows++;
+      initGrid();
+    }
+
+    function addCol() {
+      numCols++;
+      initGrid();
+    }
+
+    function addNewSheet() {
+      sheetsData.push({});
+      const idx = sheetsData.length - 1;
+      const tabsBar = document.getElementById('tabsBar');
+      const addBtn = tabsBar.querySelector('.add-tab-btn');
+
+      const btn = document.createElement('button');
+      btn.className = 'tab-btn';
+      btn.innerText = `HOJA ${idx + 1}`;
+      btn.onclick = () => switchSheet(idx);
+      tabsBar.insertBefore(btn, addBtn);
+
+      switchSheet(idx);
+    }
+
+    function switchSheet(idx) {
+      currentSheetIndex = idx;
+      document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === idx);
+      });
+      renderSheet();
+    }
+
+    function applyFormat(type) {
+      const td = getTdElement(activeCell.row, activeCell.col);
+      if (!td) return;
+      if (type === 'bold') td.style.fontWeight = td.style.fontWeight === 'bold' ? 'normal' : 'bold';
+      if (type === 'align-left') td.style.textAlign = 'left';
+      if (type === 'align-center') td.style.textAlign = 'center';
+      if (type === 'align-right') td.style.textAlign = 'right';
+    }
+
+    function clearSheet() {
+      if (confirm('¿Vaciar los datos de la hoja actual?')) {
+        sheetsData[currentSheetIndex] = {};
+        renderSheet();
+      }
+    }
+
+    function exportToExcel() {
+      const wb = XLSX.utils.book_new();
+      sheetsData.forEach((sheet, idx) => {
+        const aoa = [];
+        for (let r = 1; r <= numRows; r++) {
+          const rowData = [];
+          for (let c = 1; c <= numCols; c++) {
+            const key = `${getColName(c)}${r}`;
+            rowData.push(sheet[key] || '');
+          }
+          aoa.push(rowData);
+        }
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        XLSX.utils.book_append_sheet(wb, ws, `Hoja ${idx + 1}`);
+      });
+      XLSX.writeFile(wb, 'meow_sheets.xlsx');
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('light-mode');
+    }
+
+    // Inicialización
+    initGrid();
+  </script>
+</body>
+</html>
