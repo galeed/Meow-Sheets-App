@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Meow Sheets App</title>
+  <title>Meow Sheets - Ultimate Enterprise Edition</title>
 
   <!-- Tipografías -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -72,11 +72,35 @@
       text-transform: uppercase; text-align: center; padding: 8px 0; font-weight: 700;
     }
 
-    /* BARRA DE HERRAMIENTAS Y OPCIONES */
-    .toolbar {
-      display: flex; flex-wrap: wrap; border-bottom: var(--border-thick) solid var(--border);
-      background: var(--app-bg); gap: 4px; padding: 4px; align-items: center;
+    /* PESTAÑAS DE NAVEGACIÓN SUBMENÚ */
+    .menu-selector-bar {
+      display: flex; background: var(--app-bg); border-bottom: var(--border-thin) solid var(--border);
+      overflow-x: auto; flex-shrink: 0;
     }
+
+    .menu-tab-btn {
+      background: transparent; color: var(--subtext); border: none;
+      border-right: var(--border-thin) solid var(--border); padding: 6px 12px;
+      font-size: 10px; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif;
+      letter-spacing: 1px;
+    }
+
+    .menu-tab-btn.active {
+      color: var(--text); background: var(--cell-active);
+      border-bottom: 2px solid var(--accent); font-weight: bold;
+    }
+
+    /* BARRA DE HERRAMIENTAS Y OPCIONES */
+    .toolbar-container {
+      border-bottom: var(--border-thick) solid var(--border);
+      background: var(--app-bg); min-height: 36px; display: flex; align-items: center;
+    }
+
+    .sub-toolbar {
+      display: none; flex-wrap: wrap; gap: 4px; padding: 4px; align-items: center; width: 100%;
+    }
+
+    .sub-toolbar.active { display: flex; }
 
     .tool-select, .tool-input-color, .tool-input {
       background: var(--app-bg); color: var(--text); border: var(--border-thin) solid var(--border);
@@ -158,7 +182,7 @@
     @media print {
       body { padding: 0; background: #fff; color: #000; }
       .app-frame { border: none; max-width: 100%; height: auto; }
-      header, .toolbar, .formula-bar, .sheet-tabs, .bottom-controls, .modal { display: none !important; }
+      header, .menu-selector-bar, .toolbar-container, .formula-bar, .sheet-tabs, .bottom-controls, .modal { display: none !important; }
       .sheet-container { overflow: visible; }
       table.grid-table { border: 1px solid #000; }
       th, td { border: 1px solid #000; color: #000 !important; background: #fff !important; }
@@ -170,40 +194,70 @@
   <div class="app-frame">
     <header>
       <button class="header-btn" onclick="modifyStructure('addRow')">+FILA</button>
-      <div class="brand-title">MEOW SHEETS APP</div>
+      <div class="brand-title">MEOW SHEETS PRO</div>
       <button class="header-btn" onclick="toggleTheme()">🌙</button>
       <button class="header-btn" style="border-right: none;" onclick="modifyStructure('addCol')">+COL</button>
     </header>
 
-    <!-- BARRA DE HERRAMIENTAS DE FORMATO, BÚSQUEDA Y HERRAMIENTAS -->
-    <div class="toolbar">
-      <button class="header-btn" style="padding: 4px 8px;" onclick="undo()" title="Deshacer (Ctrl+Z)">↩</button>
-      <button class="header-btn" style="padding: 4px 8px;" onclick="redo()" title="Rehacer (Ctrl+Y)">↪</button>
-      <button class="header-btn" style="padding: 4px 8px;" onclick="applyFormat('bold')"><b>B</b></button>
-      <button class="header-btn" style="padding: 4px 8px;" onclick="applyFormat('wrap')">Wrap</button>
+    <!-- NAVEGACIÓN DE SUBMENÚS -->
+    <div class="menu-selector-bar">
+      <button class="menu-tab-btn active" onclick="switchSubmenu('archivo')">📁 Archivo</button>
+      <button class="menu-tab-btn" onclick="switchSubmenu('edicion')">✏️ Edición</button>
+      <button class="menu-tab-btn" onclick="switchSubmenu('formato')">🎨 Formato</button>
+      <button class="menu-tab-btn" onclick="switchSubmenu('datos')">📊 Datos & Fórmulas</button>
+      <button class="menu-tab-btn" onclick="switchSubmenu('herramientas')">📸 Herramientas</button>
+    </div>
+
+    <!-- CONTENEDOR DE TOOLBARS ORGANIZADAS POR SUBMENÚ -->
+    <div class="toolbar-container">
       
-      <!-- Formato de Datos -->
-      <select class="tool-select" id="formatType" onchange="setCellFormat(this.value)">
-        <option value="text">Texto Libre</option>
-        <option value="currency">Moneda ($)</option>
-        <option value="percent">Porcentaje (%)</option>
-        <option value="dropdown">Lista Desplegable</option>
-      </select>
+      <!-- Submenú: ARCHIVO -->
+      <div id="sub-archivo" class="sub-toolbar active">
+        <button class="header-btn" style="padding: 4px 8px;" onclick="saveToStorage()">💾 Guardar</button>
+        <button class="header-btn" style="padding: 4px 8px;" onclick="exportToExcel()">📄 Exportar XLSX</button>
+        <button class="header-btn" style="padding: 4px 8px;" onclick="exportPDF()">🖨️ PDF / Imprimir</button>
+        <button class="header-btn" style="padding: 4px 8px; border-right:none;" onclick="clearSheet()">Vaciar Hoja</button>
+      </div>
 
-      <!-- Colores -->
-      <label style="font-size:10px;">Texto: <input type="color" class="tool-input-color" id="textColor" onchange="applyStyle('color', this.value)"></label>
-      <label style="font-size:10px;">Fondo: <input type="color" class="tool-input-color" id="bgColor" onchange="applyStyle('backgroundColor', this.value)"></label>
+      <!-- Submenú: EDICIÓN -->
+      <div id="sub-edicion" class="sub-toolbar">
+        <button class="header-btn" style="padding: 4px 8px;" onclick="undo()" title="Deshacer (Ctrl+Z)">↩ Deshacer</button>
+        <button class="header-btn" style="padding: 4px 8px;" onclick="redo()" title="Rehacer (Ctrl+Y)">↪ Rehacer</button>
+        <button class="header-btn" style="padding: 4px 8px;" onclick="openModal('searchModal')">🔍 Buscar / Reemplazar</button>
+        <button class="header-btn" style="padding: 4px 8px; border-right:none;" onclick="clearSelectedCell()">🗑️ Limpiar Celda</button>
+      </div>
 
-      <!-- Ordenamiento & Filtros -->
-      <button class="header-btn" style="padding: 4px 8px;" onclick="sortColumn('ASC')">A-Z</button>
-      <button class="header-btn" style="padding: 4px 8px;" onclick="sortColumn('DESC')">Z-A</button>
+      <!-- Submenú: FORMATO -->
+      <div id="sub-formato" class="sub-toolbar">
+        <button class="header-btn" style="padding: 4px 8px;" onclick="applyFormat('bold')"><b>B</b></button>
+        <button class="header-btn" style="padding: 4px 8px;" onclick="applyFormat('wrap')">Wrap</button>
+        <select class="tool-select" id="formatType" onchange="setCellFormat(this.value)">
+          <option value="text">Texto Libre</option>
+          <option value="currency">Moneda ($)</option>
+          <option value="percent">Porcentaje (%)</option>
+          <option value="dropdown">Lista Desplegable</option>
+        </select>
+        <label style="font-size:10px;">Texto: <input type="color" class="tool-input-color" id="textColor" onchange="applyStyle('color', this.value)"></label>
+        <label style="font-size:10px;">Fondo: <input type="color" class="tool-input-color" id="bgColor" onchange="applyStyle('backgroundColor', this.value)"></label>
+        <button class="header-btn" style="padding: 4px 8px; border-right:none;" onclick="openModal('conditionalModal')">🎨 Formato Condicional</button>
+      </div>
 
-      <!-- Búsqueda, QR, Scanner & PDF -->
-      <button class="header-btn" style="padding: 4px 8px;" onclick="openModal('searchModal')">🔍 Buscar</button>
-      <button class="header-btn" style="padding: 4px 8px;" onclick="generateQR()">📱 QR</button>
-      <button class="header-btn" style="padding: 4px 8px;" onclick="startScanner()">📷 Escanear</button>
-      <button class="header-btn" style="padding: 4px 8px;" onclick="generateChart()">📊 Gráfico</button>
-      <button class="header-btn" style="padding: 4px 8px; border-right:none;" onclick="exportPDF()">🖨️ PDF</button>
+      <!-- Submenú: DATOS Y FÓRMULAS -->
+      <div id="sub-datos" class="sub-toolbar">
+        <button class="header-btn" style="padding: 4px 8px;" onclick="sortColumn('ASC')">A-Z</button>
+        <button class="header-btn" style="padding: 4px 8px;" onclick="sortColumn('DESC')">Z-A</button>
+        <button class="header-btn" style="padding: 4px 8px;" onclick="insertFormulaTemplate('SUMA')">∑ SUMA</button>
+        <button class="header-btn" style="padding: 4px 8px;" onclick="insertFormulaTemplate('PROMEDIO')">x̄ PROMEDIO</button>
+        <button class="header-btn" style="padding: 4px 8px;" onclick="generateChart()">📊 Gráfico</button>
+        <button class="header-btn" style="padding: 4px 8px; border-right:none;" onclick="openModal('dropdownModal')">📋 Crear Desplegable</button>
+      </div>
+
+      <!-- Submenú: HERRAMIENTAS -->
+      <div id="sub-herramientas" class="sub-toolbar">
+        <button class="header-btn" style="padding: 4px 8px;" onclick="generateQR()">📱 Generar QR</button>
+        <button class="header-btn" style="padding: 4px 8px; border-right:none;" onclick="startScanner()">📷 Escanear Cámara</button>
+      </div>
+
     </div>
 
     <!-- BARRA DE FÓRMULAS -->
@@ -245,6 +299,32 @@
       <button class="header-btn" style="flex:1;" onclick="executeSearch()">Buscar</button>
       <button class="header-btn" style="flex:1;" onclick="executeReplace()">Reemplazar Todo</button>
     </div>
+  </div>
+
+  <!-- MODAL LISTA DESPLEGABLE -->
+  <div id="dropdownModal" class="modal">
+    <div class="modal-header">
+      <span>DEFINIR OPCIONES DESPLEGABLES</span>
+      <button class="modal-close" onclick="closeModal('dropdownModal')">✕</button>
+    </div>
+    <input type="text" class="tool-input" id="dropdownOptionsInput" placeholder="Separadas por coma: Opción A, Opción B, Completado" style="width:100%; margin-bottom:12px;">
+    <button class="header-btn" style="width:100%;" onclick="applyCustomDropdown()">Aplicar a Celda Activa</button>
+  </div>
+
+  <!-- MODAL FORMATO CONDICIONAL -->
+  <div id="conditionalModal" class="modal">
+    <div class="modal-header">
+      <span>FORMATO CONDICIONAL</span>
+      <button class="modal-close" onclick="closeModal('conditionalModal')">✕</button>
+    </div>
+    <select class="tool-select" id="condRule" style="width:100%; margin-bottom:8px;">
+      <option value="gt">Es Mayor Que</option>
+      <option value="lt">Es Menor Que</option>
+      <option value="eq">Es Igual A</option>
+    </select>
+    <input type="text" class="tool-input" id="condVal" placeholder="Valor de prueba..." style="width:100%; margin-bottom:8px;">
+    <label style="font-size:10px; display:block; margin-bottom:12px;">Color Resaltado: <input type="color" class="tool-input-color" id="condColor" value="#554400"></label>
+    <button class="header-btn" style="width:100%;" onclick="applyConditionalRule()">Aplicar a Hoja</button>
   </div>
 
   <!-- MODAL CÓDIGO QR -->
@@ -336,6 +416,16 @@
       saveStateToHistory();
     }
 
+    /* SISTEMA DE SUBMENÚS */
+    function switchSubmenu(name) {
+      document.querySelectorAll('.menu-tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.sub-toolbar').forEach(tb => tb.classList.remove('active'));
+
+      event.target.classList.add('active');
+      const targetSub = document.getElementById(`sub-${name}`);
+      if (targetSub) targetSub.classList.add('active');
+    }
+
     /* REDIMENSIONAMIENTO DE FILAS Y COLUMNAS */
     function addResizerToColumn(th, colIdx) {
       const resizer = document.createElement('div');
@@ -422,6 +512,13 @@
       saveStateToHistory();
     }
 
+    function insertFormulaTemplate(type) {
+      const colName = getColName(activeCell.col);
+      const formulaStr = `=${type}(${colName}1:${colName}${Math.max(1, activeCell.row - 1)})`;
+      document.getElementById('formulaInput').value = formulaStr;
+      onFormulaInput(formulaStr);
+    }
+
     function evaluateAllFormulas() {
       const currentData = sheetsData[currentSheetIndex];
       const currentFmt = cellFormats[currentSheetIndex] || {};
@@ -457,13 +554,13 @@
       }
     }
 
-    function createDropdownCell(td, cellKey, rawVal) {
+    function createDropdownCell(td, cellKey, rawVal, customOpts) {
       td.innerText = '';
       const select = document.createElement('select');
       select.className = 'tool-select';
       select.style.width = '100%';
       select.style.border = 'none';
-      const options = ['Opción A', 'Opción B', 'Opción C', 'Completado', 'Pendiente'];
+      const options = customOpts || ['Opción A', 'Opción B', 'Opción C', 'Completado', 'Pendiente'];
       options.forEach(opt => {
         const o = document.createElement('option');
         o.value = opt; o.innerText = opt;
@@ -472,6 +569,17 @@
       });
       select.onchange = (e) => onCellEdit(td.dataset.row, td.dataset.col, e.target.value);
       td.appendChild(select);
+    }
+
+    function applyCustomDropdown() {
+      const val = document.getElementById('dropdownOptionsInput').value;
+      if (!val) return;
+      const opts = val.split(',').map(s => s.trim());
+      const cellKey = `${getColName(activeCell.col)}${activeCell.row}`;
+      setCellFormat('dropdown');
+      const td = getTdElement(activeCell.row, activeCell.col);
+      if (td) createDropdownCell(td, cellKey, '', opts);
+      closeModal('dropdownModal');
     }
 
     function parseFormula(formula, data) {
@@ -525,6 +633,39 @@
         if (!isNaN(val)) values.push(val);
       }
       return values;
+    }
+
+    function applyConditionalRule() {
+      const rule = document.getElementById('condRule').value;
+      const targetVal = parseFloat(document.getElementById('condVal').value);
+      const color = document.getElementById('condColor').value;
+
+      for (let r = 1; r <= numRows; r++) {
+        for (let c = 1; c <= numCols; c++) {
+          const cellKey = `${getColName(c)}${r}`;
+          const val = parseFloat(sheetsData[currentSheetIndex][cellKey]);
+          if (!isNaN(val)) {
+            const td = getTdElement(r, c);
+            if (!td) continue;
+            if ((rule === 'gt' && val > targetVal) || (rule === 'lt' && val < targetVal) || (rule === 'eq' && val === targetVal)) {
+              td.style.backgroundColor = color;
+            }
+          }
+        }
+      }
+      closeModal('conditionalModal');
+    }
+
+    function clearSelectedCell() {
+      const cellKey = `${getColName(activeCell.col)}${activeCell.row}`;
+      delete sheetsData[currentSheetIndex][cellKey];
+      const td = getTdElement(activeCell.row, activeCell.col);
+      if (td) {
+        td.innerText = '';
+        td.removeAttribute('style');
+      }
+      document.getElementById('formulaInput').value = '';
+      saveToStorage();
     }
 
     /* BÚSQUEDA Y REEMPLAZO */
