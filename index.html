@@ -186,59 +186,81 @@
     td.highlight-search { background: var(--accent) !important; color: var(--app-bg); }
     td.wrap-text { white-space: normal; word-break: break-word; }
 
-    /* CONTROLES INFERIORES Y PESTAÑAS */
-    .sheet-tabs { display: flex; border-top: var(--border-thick) solid var(--border); background: var(--app-bg); overflow-x: auto; flex-shrink: 0;}
-    .tab-btn { background: transparent; color: var(--subtext); border: none; border-right: var(--border-thin) solid var(--border); padding: 8px 16px; font-size: 10px; cursor: pointer; text-transform: uppercase; }
+    /* CONTROLES INFERIORES Y PESTAÑAS INTEGRADAS CON EXPORTAR */
+    .sheet-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: var(--border-thick) solid var(--border);
+      background: var(--app-bg);
+      flex-shrink: 0;
+      padding-right: 4px;
+    }
+
+    .sheet-tabs {
+      display: flex;
+      overflow-x: auto;
+      flex: 1;
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: var(--subtext);
+      border: none;
+      border-right: var(--border-thin) solid var(--border);
+      padding: 8px 16px;
+      font-size: 10px;
+      cursor: pointer;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
     .tab-btn.active { color: var(--text); font-weight: bold; border-top: 2px solid var(--accent); background: var(--cell-active); }
 
-    /* BOTÓN FLOTANTE DE EXPORTAR */
-    .export-floating-btn {
-      position: absolute;
-      bottom: 12px;
-      right: 12px;
+    /* BOTÓN EXPORTAR INTEGRADO EN EL MARGEN INTERNO */
+    .export-integrated-btn {
       display: inline-flex;
       align-items: stretch;
       background-color: #000000;
-      border: 2px solid var(--accent);
+      border: 1.5px solid var(--accent);
       cursor: pointer;
-      z-index: 100;
       user-select: none;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+      flex-shrink: 0;
+      margin: 4px 2px;
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .export-floating-btn:hover {
-      box-shadow: 0 0 10px var(--accent);
+    .export-integrated-btn:hover {
+      box-shadow: 0 0 8px var(--accent);
     }
 
     .export-btn-prefix {
       background-color: #000000;
       color: #ffffff;
-      padding: 6px 10px;
+      padding: 4px 8px;
       font-family: monospace;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: bold;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-right: 2px solid var(--accent);
+      border-right: 1.5px solid var(--accent);
     }
 
     .export-btn-main {
       background-color: #ffffff;
       color: #000000;
-      padding: 6px 14px;
+      padding: 4px 10px;
       font-family: 'Oswald', sans-serif;
       font-weight: 700;
-      font-size: 13px;
-      letter-spacing: 2px;
+      font-size: 11px;
+      letter-spacing: 1px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .export-btn-main .arrow-up {
-      font-size: 10px;
+      font-size: 9px;
     }
 
     /* MODALES NATIVAS */
@@ -256,7 +278,7 @@
     @media print {
       body { padding: 0; background: #fff; color: #000; }
       .app-frame { border: none; max-width: 100%; height: auto; }
-      header, .formula-bar, .sheet-tabs, .sidebar, .sidebar-overlay, .modal, .export-floating-btn { display: none !important; }
+      header, .formula-bar, .sheet-footer, .sidebar, .sidebar-overlay, .modal { display: none !important; }
       .sheet-container { overflow: visible; }
       table.grid-table { border: 1px solid #000; }
       th, td { border: 1px solid #000; color: #000 !important; background: #fff !important; }
@@ -403,17 +425,19 @@
       </table>
     </div>
 
-    <!-- PESTAÑAS -->
-    <div class="sheet-tabs" id="tabsBar">
-      <button class="tab-btn active" onclick="switchSheet(0)">HOJA 1</button>
-      <button class="tab-btn" style="color:var(--accent);" onclick="addNewSheet()">+ Nueva Hoja</button>
-    </div>
+    <!-- BARRA INFERIOR DE PESTAÑAS Y EXPORTACIÓN INTEGRADA -->
+    <div class="sheet-footer">
+      <div class="sheet-tabs" id="tabsBar">
+        <button class="tab-btn active" onclick="switchSheet(0)">HOJA 1</button>
+        <button class="tab-btn" style="color:var(--accent);" onclick="addNewSheet()">+ Nueva Hoja</button>
+      </div>
 
-    <!-- BOTÓN FLOTANTE INFERIOR DERECHO: EXPORTAR -->
-    <div class="export-floating-btn" onclick="exportToExcel()">
-      <div class="export-btn-prefix">&rarr;</div>
-      <div class="export-btn-main">
-        EXPORTAR <span class="arrow-up">&#9650;</span>
+      <!-- BOTÓN DE EXPORTAR ALINEADO EN EL MARGEN INTERNO -->
+      <div class="export-integrated-btn" onclick="exportToExcel()" title="Exportar a Excel">
+        <div class="export-btn-prefix">&rarr;</div>
+        <div class="export-btn-main">
+          EXPORTAR <span class="arrow-up">&#9650;</span>
+        </div>
       </div>
     </div>
 
